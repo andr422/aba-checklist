@@ -142,7 +142,7 @@
         session.data.push(arr);
       });
       const hist = JSON.parse(localStorage.getItem('aba_history') || '[]'); hist.push(session);
-      if (hist.length > 5) hist.shift();
+      if (hist.length > 10) hist.shift();
       localStorage.setItem('aba_history', JSON.stringify(hist));
       document.querySelectorAll('.count').forEach(e => e.textContent = '0');
       updatePercentages(); saveProgress(); renderHistory();
