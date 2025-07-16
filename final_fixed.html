@@ -183,32 +183,60 @@
       }
     }
 
-    function renderHistory() {
-      const hist = JSON.parse(localStorage.getItem('aba_history') || '[]');
-      historyContainer.innerHTML = '<h2>История сессий</h2>';
-      if (!hist.length) { historyContainer.innerHTML += '<p>Нет сохранённых сессий.</p>'; return; }
+function renderHistory() {
+  const hist = JSON.parse(localStorage.getItem('aba_history') || '[]');
+  const cnt  = getProtocolsCount();
+  historyContainer.innerHTML = '<h2>История сессий</h2>';
+  if (!hist.length) {
+    historyContainer.innerHTML += '<p>Нет сохранённых сессий.</p>';
+    return;
+  }
+  // Для каждого протокола своя таблица
+  for (let i = 1; i <= cnt; i++) {
+    const title = localStorage.getItem(`protocol${i}_title`) || `Протокол ${i}`;
+    const sel   = JSON.parse(localStorage.getItem(`protocol${i}_selectedGoals`) || '[]') || [1,2,3];
+
+    const sec = document.createElement('div');
+    sec.className = 'history-session';
+    const hdr = document.createElement('h3');
+    hdr.textContent = title;
+    sec.appendChild(hdr);
+
+    const tbl = document.createElement('table');
+    tbl.className = 'history-table';
+
+    // Шапка с датами
+    const thead = tbl.createTHead();
+    const hr    = thead.insertRow();
+    const th0   = document.createElement('th');
+    th0.textContent = 'Цель';
+    hr.appendChild(th0);
+    hist.forEach(sess => {
+      const th = document.createElement('th');
+      th.textContent = sess.date;
+      hr.appendChild(th);
+    });
+
+    // Тело: каждая выбранная цель в строке
+    const tbody = tbl.createTBody();
+    sel.forEach((gIdx, k) => {
+      const tr = tbody.insertRow();
+      // Текст цели
+      const cell0 = tr.insertCell();
+      cell0.textContent = localStorage.getItem(`protocol${i}_goal${gIdx}`) || `Цель ${gIdx}`;
+      // Проценты за каждую сессию (или “—”)
       hist.forEach(sess => {
-        const sdiv = document.createElement('div'); sdiv.className = 'history-session';
-        const hd = document.createElement('h3'); hd.textContent = sess.date; sdiv.append(hd);
-        sess.data.forEach((arr,pi) => {
-          const ttl = localStorage.getItem(`protocol${pi+1}_title`) || `Протокол ${pi+1}`;
-          const tbl = document.createElement('table'); tbl.className = 'history-table';
-          const thead = tbl.createTHead(); const hr = thead.insertRow(); hr.insertCell().textContent = 'Цель';
-          hist.forEach(h => hr.insertCell().textContent = h.date);
-          const tbody = tbl.createTBody();
-          const sel = JSON.parse(localStorage.getItem(`protocol${pi+1}_selectedGoals`) || '[]') || [1,2,3];
-          sel.forEach((gIdx,k) => {
-            const tr = tbody.insertRow(); tr.insertCell().textContent = localStorage.getItem(`protocol${pi+1}_goal${gIdx}`) || `Цель ${gIdx}`;
-            const cell = tr.insertCell();
-            const v = arr[k];
-            cell.textContent = v == null ? '—' : v + '%';
-          });
-          const cap = document.createElement('h4'); cap.textContent = ttl;
-          sdiv.append(cap,tbl);
-        });
-        historyContainer.append(sdiv);
+        const cell = tr.insertCell();
+        const arr  = sess.data[i-1] || [];
+        const v    = arr[k];
+        cell.textContent = v == null ? '—' : v + '%';
       });
-    }
+    });
+
+    sec.appendChild(tbl);
+    historyContainer.appendChild(sec);
+  }
+}
 
     function increment(btn) {
       if (btn.disabled) return;
